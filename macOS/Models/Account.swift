@@ -60,25 +60,12 @@ class Account {
     func showWindow() {
         windowController.showWindow(nil)
     }
-    
-    //TODO: look to using URLComponents to do this
-    func _appendToQuery(url: URL, queryItems: Dictionary<String, String>) -> URL? {
-        var selfToString = url.absoluteString
-        var separator = (url.query == nil) ? "?" : "&"
         
-        for (k, v) in queryItems {
-            selfToString += separator + k + "=" + v.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
-            separator = "&"
-        }
-        return URL(string: selfToString)
-    }
-    
-    func loadComposePage(mailTo: [String: String]){
+    func mailTo(_ mailTo: [String: String]){
         var mailToUrl = self.url
         mailToUrl.appendPathComponent("compose")
-        if let finalMailToUrl = self._appendToQuery(url: mailToUrl, queryItems: mailTo) {
-            windowController.webView.load(URLRequest(url: finalMailToUrl))
-        }
+        let finalMailToUrl = mailToUrl.appendingQueryItems(mailTo)
+        windowController.webView.load(URLRequest(url: finalMailToUrl))
     }
 
 }

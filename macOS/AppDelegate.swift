@@ -140,7 +140,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, DJLURLHandlerDelegate {
         if let mailTo = self.mailTo {
             for a in Account.accounts {
                 if (a.isLoggedIn){
-                    a.loadComposePage(mailTo: mailTo)
+                    a.mailTo(mailTo)
                     self.mailTo = nil
                     break
                 }
