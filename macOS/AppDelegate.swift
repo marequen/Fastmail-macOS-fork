@@ -9,10 +9,17 @@ import Cocoa
 import Foundation
 import AppKit
 
+func valueIsNonEmptyString(key: String, value: Any?) -> Bool {
+    if let stringValue = value as? String {
+        return stringValue.isEmpty == false
+    }
+    return false
+}
+
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate, DJLURLHandlerDelegate {
     
-    var mailTo: String?;
+    var mailTo: [String: String]?;
     
     lazy var prefsWindowController: PrefsWindowController = { PrefsWindowController(windowNibName: String(describing: PrefsWindowController.self)) }()
 
@@ -104,7 +111,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, DJLURLHandlerDelegate {
                 
                 account.accountLoginCallback = {
                     if (self.mailTo != nil){
-                        self.showMailToInFirstAccountWindow()
+                        self.composeMessageWithFirstLoggedInAccount()
                     }
                 }
 
@@ -129,11 +136,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, DJLURLHandlerDelegate {
         }
     }
     
-    func showMailToInFirstAccountWindow(){
+    func composeMessageWithFirstLoggedInAccount(){
         if let mailTo = self.mailTo {
-            for a in Account.accounts.reversed() {
+            for a in Account.accounts {
                 if (a.isLoggedIn){
-                    a.showWindowForMailTo(mailTo: mailTo)
+                    a.loadComposePage(mailTo: mailTo)
                     self.mailTo = nil
                     break
                 }
@@ -154,34 +161,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, DJLURLHandlerDelegate {
     
     // MARK: DJLURLHandler delegate
     
-    func djlurlHandler(_ handler: DJLURLHandler!, composeMessageWithTo to: String!, cc: String!, bcc: String!, subject: String!, body: String!) {
-        self.mailTo = to;
-        self.showMailToInFirstAccountWindow()
+    func djlurlHandler(_ handler: DJLURLHandler!, composeMessageWithTo to: String, cc: String, bcc: String, subject: String, body: String) {
+        self.mailTo = ["to":to, "cc":cc, "bcc":bcc, "subject":subject, "body":body].filter(valueIsNonEmptyString)
+        self.composeMessageWithFirstLoggedInAccount()
     }
     
-    func djlurlHandler(_ handler: DJLURLHandler!, composeMessageWithTo to: String!, cc: String!, bcc: String!, subject: String!, htmlBody: String!) {
-        self.mailTo = to;
-        self.showMailToInFirstAccountWindow()
+    func djlurlHandler(_ handler: DJLURLHandler!, composeMessageWithTo to: String, cc: String, bcc: String, subject: String, htmlBody: String) {
+        //TODO: is passing HTML to "body" kosher?
+        self.mailTo = ["to":to, "cc":cc, "bcc":bcc, "subject":subject, "body":htmlBody].filter(valueIsNonEmptyString)
+        self.composeMessageWithFirstLoggedInAccount()
     }
     
-    func djlurlHandler(_ handler: DJLURLHandler!, composeMessageWithTo to: String!, cc: String!, bcc: String!, subject: String!, archive: WebArchive!) {
-        // Not supported
+    func djlurlHandler(_ handler: DJLURLHandler!, composeMessageWithTo to: String, cc: String, bcc: String, subject: String, archive: WebArchive) {
+        // Not supported.
+        // Safari used to have a "Mail Contents of This Page" menu item, which DJURLHandler
+        // (in theory) still supports. However, WebArchive was deprecated in macOS 10.14
+        
     }
     
-    func djlurlHandler(_ handler: DJLURLHandler!, openMessageWithMessageID messageID: String!) {
+    func djlurlHandler(_ handler: DJLURLHandler!, openMessageWithMessageID messageID: String) {
       // Not supported
+      // https://nshipster.com/message-id/
     }
-    
-//    func showAlert(message: String){
-//        let alert = NSAlert()
-//            alert.messageText = message
-//            alert.informativeText = "FastMail"
-//            alert.alertStyle = .warning
-//            alert.addButton(withTitle: "OK")
-//            alert.addButton(withTitle: "Cancel")
-//            alert.runModal()
-//
-//    }
     
 }
 

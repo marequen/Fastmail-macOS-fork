@@ -86,9 +86,6 @@ enum {
 
 - (void) _handleURLAfterLoad
 {
-//    NSString * string3 = [NSString stringWithFormat:@"_handleURLAfterLoad %@ %d", [self isReady] ? @"ready" : @"not ready", (int)_pendingType];
-//       [self _showAlert:string3];
-    
     if (![self isReady])
         return;
 
@@ -174,17 +171,10 @@ enum {
     [self _handleMailWebPageEventAfterLoad];
 }
 
-//- (void) _showAlert:(NSString*)message {
-//    NSAlert *alert = [[NSAlert alloc] init];
-//    [alert setMessageText: message];
-//    [alert runModal];
-//}
-
 - (void) _handleMailWebPageEventAfterLoad
 {
-    if (![self isReady]){
+    if (![self isReady])
         return;
-    }
 
     if (_pendingType != PENDING_MAIL_WEBPAGE)
         return;

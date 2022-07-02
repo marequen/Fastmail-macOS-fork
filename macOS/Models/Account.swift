@@ -62,37 +62,25 @@ class Account {
     }
     
     //TODO: look to using URLComponents to do this
-    func _appendToQuery(url: URL, a: Dictionary<String, String>) -> URL? {
+    func _appendToQuery(url: URL, queryItems: Dictionary<String, String>) -> URL? {
         var selfToString = url.absoluteString
         var separator = (url.query == nil) ? "?" : "&"
         
-        for (k, v) in a {
+        for (k, v) in queryItems {
             selfToString += separator + k + "=" + v.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
             separator = "&"
         }
         return URL(string: selfToString)
     }
     
-    func showWindowForMailTo(mailTo: String){
+    func loadComposePage(mailTo: [String: String]){
         var mailToUrl = self.url
         mailToUrl.appendPathComponent("compose")
-        if let finalMailToUrl = self._appendToQuery(url: mailToUrl, a: ["to": mailTo]) {
-            //mailToUrl.query = mailToUrl.query! + "&" + mailTo
-            self.showAlert(message: finalMailToUrl.debugDescription)
+        if let finalMailToUrl = self._appendToQuery(url: mailToUrl, queryItems: mailTo) {
             windowController.webView.load(URLRequest(url: finalMailToUrl))
         }
     }
-    
-    func showAlert(message: String){
-        let alert = NSAlert()
-            alert.messageText = message
-            alert.informativeText = "FastMail"
-            alert.alertStyle = .warning
-            alert.addButton(withTitle: "OK")
-            alert.addButton(withTitle: "Cancel")
-            alert.runModal()
 
-    }
 }
 
 extension Account {
@@ -111,7 +99,6 @@ extension Account {
                         self.setupHiddenWebView()
                         self.name = (val as? String) ?? "Fastmail"
                         self.isLoggedIn = true
-//                        self.showAlert(message: "checkForLogin succeeded " + self.name + ((self.accountLoginCallback != nil) ? "callback set" : "callback NOT set"))
                         self.accountLoginCallback?()
                     }
                 }
