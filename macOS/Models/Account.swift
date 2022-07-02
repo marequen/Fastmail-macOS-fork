@@ -22,6 +22,8 @@ class Account {
     var hiddenWebView: HiddenWebView
 
     var windowMenuItem: NSMenuItem?
+    var accountLoginCallback: (() -> ())?
+    var isLoggedIn: Bool;
 
     var inboxCount = 0 {
         didSet {
@@ -44,6 +46,7 @@ class Account {
         self.hiddenWebView = HiddenWebView()
         
         self.windowController = AccountWindowController(windowNibName: String(describing: AccountWindowController.self))
+        self.isLoggedIn = false
 
         self.hiddenWebView.account = self
         self.windowController.account = self
@@ -56,6 +59,39 @@ class Account {
 
     func showWindow() {
         windowController.showWindow(nil)
+    }
+    
+    //TODO: look to using URLComponents to do this
+    func _appendToQuery(url: URL, a: Dictionary<String, String>) -> URL? {
+        var selfToString = url.absoluteString
+        var separator = (url.query == nil) ? "?" : "&"
+        
+        for (k, v) in a {
+            selfToString += separator + k + "=" + v.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
+            separator = "&"
+        }
+        return URL(string: selfToString)
+    }
+    
+    func showWindowForMailTo(mailTo: String){
+        var mailToUrl = self.url
+        mailToUrl.appendPathComponent("compose")
+        if let finalMailToUrl = self._appendToQuery(url: mailToUrl, a: ["to": mailTo]) {
+            //mailToUrl.query = mailToUrl.query! + "&" + mailTo
+            self.showAlert(message: finalMailToUrl.debugDescription)
+            windowController.webView.load(URLRequest(url: finalMailToUrl))
+        }
+    }
+    
+    func showAlert(message: String){
+        let alert = NSAlert()
+            alert.messageText = message
+            alert.informativeText = "FastMail"
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "OK")
+            alert.addButton(withTitle: "Cancel")
+            alert.runModal()
+
     }
 }
 
@@ -74,6 +110,9 @@ extension Account {
                         timer.invalidate()
                         self.setupHiddenWebView()
                         self.name = (val as? String) ?? "Fastmail"
+                        self.isLoggedIn = true
+//                        self.showAlert(message: "checkForLogin succeeded " + self.name + ((self.accountLoginCallback != nil) ? "callback set" : "callback NOT set"))
+                        self.accountLoginCallback?()
                     }
                 }
             }

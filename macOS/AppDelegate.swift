@@ -6,12 +6,21 @@
 //
 
 import Cocoa
+import Foundation
+import AppKit
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate {
-
+class AppDelegate: NSObject, NSApplicationDelegate, DJLURLHandlerDelegate {
+    
+    var mailTo: String?;
+    
     lazy var prefsWindowController: PrefsWindowController = { PrefsWindowController(windowNibName: String(describing: PrefsWindowController.self)) }()
 
+    override init(){
+        super.init()
+        registerMailToHandler()
+    }
+    
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         registerDefaults()
 
@@ -47,6 +56,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         UserDefaults.standard.register(defaults: defaults)
     }
 
+    func registerMailToHandler() {
+        if let djlUrlHandler = DJLURLHandler.sharedManager(){
+            djlUrlHandler.delegate = self;
+            djlUrlHandler.isReady = true;
+        }
+    }
+    
     func createAccountWindowControllers() -> Int {
         for account in Account.accounts {
             if let windowsMenu = NSApp.windowsMenu, let menuItem = account.windowMenuItem {
@@ -85,6 +101,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     windowsMenu.insertItem(item, at: windowsMenu.items.count)
                     account.windowMenuItem = item
                 }
+                
+                account.accountLoginCallback = {
+                    if (self.mailTo != nil){
+                        self.showMailToInFirstAccountWindow()
+                    }
+                }
 
                 Account.accounts.append(account)
                 
@@ -107,6 +129,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
+    func showMailToInFirstAccountWindow(){
+        if let mailTo = self.mailTo {
+            for a in Account.accounts.reversed() {
+                if (a.isLoggedIn){
+                    a.showWindowForMailTo(mailTo: mailTo)
+                    self.mailTo = nil
+                    break
+                }
+            }
+        }
+    }
+    
     @objc func dumbShowWindow(_ sender: AnyObject?) {
         if let menuItem = sender as? NSMenuItem {
             for a in Account.accounts {
@@ -117,6 +151,38 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
     }
+    
+    // MARK: DJLURLHandler delegate
+    
+    func djlurlHandler(_ handler: DJLURLHandler!, composeMessageWithTo to: String!, cc: String!, bcc: String!, subject: String!, body: String!) {
+        self.mailTo = to;
+        self.showMailToInFirstAccountWindow()
+    }
+    
+    func djlurlHandler(_ handler: DJLURLHandler!, composeMessageWithTo to: String!, cc: String!, bcc: String!, subject: String!, htmlBody: String!) {
+        self.mailTo = to;
+        self.showMailToInFirstAccountWindow()
+    }
+    
+    func djlurlHandler(_ handler: DJLURLHandler!, composeMessageWithTo to: String!, cc: String!, bcc: String!, subject: String!, archive: WebArchive!) {
+        // Not supported
+    }
+    
+    func djlurlHandler(_ handler: DJLURLHandler!, openMessageWithMessageID messageID: String!) {
+      // Not supported
+    }
+    
+//    func showAlert(message: String){
+//        let alert = NSAlert()
+//            alert.messageText = message
+//            alert.informativeText = "FastMail"
+//            alert.alertStyle = .warning
+//            alert.addButton(withTitle: "OK")
+//            alert.addButton(withTitle: "Cancel")
+//            alert.runModal()
+//
+//    }
+    
 }
 
 extension AppDelegate {
